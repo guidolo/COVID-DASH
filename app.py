@@ -5,16 +5,17 @@ import altair as alt
 
 def main():
     df = load_data()
-    page = st.sidebar.selectbox("Choose a page", ["Homepage", "Exploration"])
+    page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
 
-    if page == "Homepage":
+    if page == "Data":
         st.header("This is your data explorer.")
         st.write("Please select a page on the left.")
         st.write(df)
-    elif page == "Exploration":
+    elif page == "Graph":
         st.title("Data Exploration")
-        x_axis = st.selectbox("Choose a Country", df.columns, index=3)
-        visualize_data(df, x_axis)
+        paises = st.multiselect("Choose a Country", df.columns)
+        log = st.radio('Scale', ['Normal','Log'], index=0)
+        visualize_data(df, paises, log)
 
 @st.cache
 def load_data():
@@ -34,14 +35,17 @@ def load_data():
     df = df.loc[:, 'cant']
     return df
 
-def visualize_data(df, x_axis):
-    paises = ["Spain", "Italy", "Argentina","Japan","Germany", "Netherlands", "France", "China"]
-    paises = ["Argentina", "Chile", "Brazil", "Colombia", "Costa Rica", "Peru", "Mexico"]
-    paises.sort()
-
-    df = df.loc[:, paises]
-    plt.plot(df)
-    st.pyplot()
+def visualize_data(df, paises, log):
+    #paises = ["Spain", "Italy", "Argentina","Japan","Germany", "Netherlands", "France", "China"]
+    #paises = ["Argentina", "Chile", "Brazil", "Colombia", "Costa Rica", "Peru", "Mexico"]
+    if len(paises) > 0:
+        paises.sort()
+        df = df.loc[:, paises]
+        plt.plot(df)
+        if log == 'Log':
+            plt.yscale('log')
+        plt.legend(paises)
+        st.pyplot()
 
 if __name__ == "__main__":
     main()
