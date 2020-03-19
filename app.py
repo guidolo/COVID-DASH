@@ -1,26 +1,35 @@
 import pandas as pd
+import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 import altair as alt
 
 def main():
-    df_c, df_d = load_data()
+    df_c, df_d, df_r, df_act, df_rate = load_data()
+    st.sidebar.markdown('Last update: {}'.format(df_c.index.max()))
     page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
+    log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
+    option = st.sidebar.selectbox('Option', ['Confirmed','Active','Death Rate','Deaths','Recovered'], index=0)
 
     if page == "Data":
-        st.header("This is your data explorer.")
+        #st.header("This is your data explorer.")
         st.write("Please select a page on the left.")
         st.write(df_c)
         st.write('Data from https://github.com/CSSEGISandData/COVID-19')
     elif page == "Graph":
+        #st.header('COVID-19 time exploration')
         st.title("COVID-19 Time Exploration")
         paises = st.multiselect("Choose a Country", df_c.columns)
-        log = st.radio('Scale', ['Normal','Log'], index=0)
-        option = st.radio('Option', ['Confirmed','Deaths'], index=0)
         if option == 'Confirmed':
             visualize_data(df_c, paises, log, option)
-        else:
+        if option == 'Deaths':
             visualize_data(df_d, paises, log, option)
+        if option == 'Recovered':
+            visualize_data(df_r, paises, log, option)
+        if option == 'Active':
+            visualize_data(df_act, paises, log, option)
+        if option == 'Death Rate':
+            visualize_data(df_rate, paises, log, option)
             
 def make_data(df):
     df.set_index(['Province/State', 'Country/Region', 'Lat', 'Long'], inplace=True)
@@ -39,23 +48,33 @@ def make_data(df):
 def load_data():
     df_c = pd.read_csv('./data/time_series_19-covid-Confirmed.csv')
     df_d = pd.read_csv('./data/time_series_19-covid-Deaths.csv')
+    df_r = pd.read_csv('./data/time_series_19-covid-Recovered.csv')
     df_c = make_data(df_c)
     df_d = make_data(df_d)
-    return df_c, df_d
+    df_r = make_data(df_r)
+    df_act = df_c - df_d - df_r
+    df_rate = (df_d / df_c).fillna(0).replace(np.inf, 0)
+    return df_c, df_d, df_r, df_act, df_rate
 
 def visualize_data(df, paises, log, option):
-    #paises = ["Spain", "Italy", "Argentina","Japan","Germany", "Netherlands", "France", "China"]
-    #paises = ["Argentina", "Chile", "Brazil", "Colombia", "Costa Rica", "Peru", "Mexico"]
     if len(paises) > 0:
         paises.sort()
         df = df.loc[:, paises]
         plt.plot(df)
         plt.title('COVID19 -- '+option+' Cases')
+        plt.xticks(rotation=20)
         if log == 'Log':
             plt.yscale('log')
         plt.legend(paises)
         st.pyplot()
 
+def visualize_data2(df, paises, log, option): 
+        df.columns = [x[:3] for x in df.columns]
+        if log == 'Log':
+            df = np.log(df)
+        st.line_chart(df)
+
+        
 if __name__ == "__main__":
     main()
 
