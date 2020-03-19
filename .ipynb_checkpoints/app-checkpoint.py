@@ -10,7 +10,7 @@ def main():
     if page == "Data":
         st.header("This is your data explorer.")
         st.write("Please select a page on the left.")
-        st.write(df)
+        st.write(df_c)
         st.write('Data from https://github.com/CSSEGISandData/COVID-19')
     elif page == "Graph":
         st.title("COVID-19 Time Exploration")
