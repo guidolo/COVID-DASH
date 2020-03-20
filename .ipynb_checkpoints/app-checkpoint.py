@@ -6,16 +6,18 @@ import altair as alt
 
 def main():
     df_c, df_d, df_r, df_act, df_rate = load_data()
-    st.sidebar.markdown('Last update: {}'.format(df_c.index.max()))
-    page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
-    log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
+    st.sidebar.markdown('Last day in data: {}'.format(df_c.index.max()))
     option = st.sidebar.selectbox('Option', ['Confirmed','Active','Death Rate','Deaths','Recovered'], index=0)
+    log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
+    page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
+
 
     if page == "Data":
         #st.header("This is your data explorer.")
         st.write("Please select a page on the left.")
         st.write(df_c)
         st.write('Data from https://github.com/CSSEGISandData/COVID-19')
+        st.write('This repo https://github.com/guidolo/COVID-DASH')
     elif page == "Graph":
         #st.header('COVID-19 time exploration')
         st.title("COVID-19 Time Exploration")
@@ -46,9 +48,9 @@ def make_data(df):
 
 @st.cache
 def load_data():
-    df_c = pd.read_csv('./data/time_series_19-covid-Confirmed.csv')
-    df_d = pd.read_csv('./data/time_series_19-covid-Deaths.csv')
-    df_r = pd.read_csv('./data/time_series_19-covid-Recovered.csv')
+    df_c = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Confirmed.csv')
+    df_d = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Deaths.csv')
+    df_r = pd.read_csv('https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_19-covid-Recovered.csv')
     df_c = make_data(df_c)
     df_d = make_data(df_d)
     df_r = make_data(df_r)
