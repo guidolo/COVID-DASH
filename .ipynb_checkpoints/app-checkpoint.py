@@ -5,11 +5,12 @@ import streamlit as st
 import altair as alt
 
 def main():
-    df_c, df_c_r1, df_c_r100, df_d, df_r, df_act, df_rate = load_data()
+    df_c, df_c_r1, df_c_r100, df_c_pc, df_d, df_r, df_act, df_rate = load_data()
     st.sidebar.markdown('Last day in data: {}'.format(df_c.index.max()))
     option = st.sidebar.selectbox('Option', ['Confirmed',
                                              'Confirmed from 1st case',
                                              'Confirmed from 100 cases',
+                                             'Confirmed Percent Change',
                                              'Active',
                                              'Death Rate',
                                              'Deaths',
@@ -29,17 +30,19 @@ def main():
         st.title("COVID-19 Time Exploration")
         paises = st.multiselect("Choose a Country", df_c.columns)
         if option == 'Confirmed':
-            visualize_data(df_c, paises, log, 'Confirmed Cases', 'Date', '# Cases')
+            visualize_data2(df_c, paises, log, 'Confirmed Cases', 'Date', '# Cases')
         if option == 'Confirmed from 1st case':
             visualize_data(df_c_r1, paises, log, option, 'Days', '# Cases')
         if option == 'Confirmed from 100 cases':
             visualize_data(df_c_r100, paises, log, option, 'Days', '# Cases')
+        if option == 'Confirmed Percent Change':
+            visualize_data(df_c_pc, paises, log, option, 'Date', 'Percent Change')
         if option == 'Deaths':
-            visualize_data(df_d, paises, log, 'Death Cases', 'Date', '# Cases')
+            visualize_data2(df_d, paises, log, 'Death Cases', 'Date', '# Cases')
         if option == 'Recovered':
-            visualize_data(df_r, paises, log, 'Recovered Cases', 'Date', '# Cases')
+            visualize_data2(df_r, paises, log, 'Recovered Cases', 'Date', '# Cases')
         if option == 'Active':
-            visualize_data(df_act, paises, log, 'Active Cases', 'Date', '# Cases')
+            visualize_data2(df_act, paises, log, 'Active Cases', 'Date', '# Cases')
         if option == 'Death Rate':
             visualize_data(df_rate, paises, log, option, 'Date', 'Death rate')
 
@@ -78,7 +81,8 @@ def load_data():
     df_rate = (df_d / df_c).fillna(0).replace(np.inf, 0)
     df_c_r100 = rescale(df_c, 100)
     df_c_r1 = rescale(df_c, 1)
-    return df_c, df_c_r1, df_c_r100, df_d, df_r, df_act, df_rate
+    df_c_pc = df_c.pct_change()
+    return df_c, df_c_r1, df_c_r100, df_c_pc, df_d, df_r, df_act, df_rate
 
 def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
     if len(paises) > 0:
@@ -94,12 +98,53 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
         plt.legend(paises)
         st.pyplot()
 
-def visualize_data2(df, paises, log, option): 
-        df.columns = [x[:3] for x in df.columns]
-        if log == 'Log':
-            df = np.log(df)
-        st.line_chart(df)
+def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
+    source= df[paises].reset_index().melt('issue_date', var_name='Country', value_name='Cases').rename(columns={'issue_date':'Date'})
+    
+    # Create a selection that chooses the nearest point & selects based on x-value
+    nearest = alt.selection(type='single', nearest=True, on='mouseover',fields=['Date'], empty='none')
 
+    # The basic line
+    line = alt.Chart(source).mark_line(interpolate='basis').encode(
+        x='Date:T',
+        y='Cases:Q',
+        #color='Country:N'
+        color=alt.Color('Country', legend=alt.Legend(orient="bottom"))
+    )
+
+    # Transparent selectors across the chart. This is what tells us
+    # the x-value of the cursor
+    selectors = alt.Chart(source).mark_point().encode(
+        x='Date:T',
+        opacity=alt.value(0),
+    ).add_selection(
+        nearest
+    )
+
+    # Draw points on the line, and highlight based on selection
+    points = line.mark_point().encode(
+        opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+    )
+
+    # Draw text labels near the points, and highlight based on selection
+    text = line.mark_text(align='right', dx=5, dy=-5).encode(
+        text=alt.condition(nearest, 'Cases:Q', alt.value(' '))
+    )
+
+    # Draw a rule at the location of the selection
+    rules = alt.Chart(source).mark_rule(color='gray').encode(
+        x='Date:T',
+    ).transform_filter(
+        nearest
+    )
+
+    # Put the five layers into a chart and bind the data
+    graph = alt.layer(
+        line, selectors, points, rules, text
+    ).properties(
+        width=700, height=400
+    )
+    st.write(graph)
         
 if __name__ == "__main__":
     main()
