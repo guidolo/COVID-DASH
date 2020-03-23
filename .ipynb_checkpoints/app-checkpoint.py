@@ -4,7 +4,9 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import altair as alt
 
+
 def main():
+    global WIDTH, HEIGHT
     df_c, df_c_r1, df_c_r100, df_c_pc, df_d, df_r, df_act, df_rate = load_data()
     st.sidebar.markdown('Last day in data: {}'.format(df_c.index.max()))
     option = st.sidebar.selectbox('Option', ['Confirmed',
@@ -17,6 +19,9 @@ def main():
                                              'Recovered'], index=0)
     log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
     page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
+    #get width and heigh
+    fig = plt.figure()
+    WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
 
 
     if page == "Data":
@@ -99,6 +104,7 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
         st.pyplot()
 
 def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
+    global WIDTH, HEIGHT
     source= df[paises].reset_index().melt('issue_date', var_name='Country', value_name='Cases').rename(columns={'issue_date':'Date'})
     
     # Create a selection that chooses the nearest point & selects based on x-value
@@ -108,7 +114,7 @@ def visualize_data2(df, paises, log, option, xlabel='', ylabel=''):
     line = alt.Chart(source).mark_line(interpolate='basis').encode(
         x='Date:T',
         y='Cases:Q',
-        #color='Country:N'
+        #y=alt.Y('Cases', scale=alt.Scale(type='log')),
         color=alt.Color('Country', legend=alt.Legend(orient="bottom"))
     )
 
@@ -139,13 +145,13 @@ def visualize_data2(df, paises, log, option, xlabel='', ylabel=''):
     )
 
     # Put the five layers into a chart and bind the data
-    graph = alt.layer(
-        line, selectors, points, rules, text
-    ).properties(
-        width=700, height=400
-    )
+    graph = alt.layer(line, selectors, points, rules, text).properties(
+            width=WIDTH, height=HEIGHT
+            )
+    
     st.write(graph)
         
 if __name__ == "__main__":
+    WIDTH = HEIGHT = 0
     main()
 
