@@ -21,7 +21,12 @@ def main():
     page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
     #get width and heigh
     fig = plt.figure()
-    WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
+    #WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
+    WIDTH, HEIGHT = [640, 480]
+    #bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
+    #WIDTH, HEIGHT = bbox.width*fig.dpi, bbox.height*fig.dpi
+    #st.sidebar.markdown(WIDTH)
+    #st.sidebar.markdown(HEIGHT)
 
 
     if page == "Data":
@@ -90,6 +95,7 @@ def load_data():
     return df_c, df_c_r1, df_c_r100, df_c_pc, df_d, df_r, df_act, df_rate
 
 def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
+    global WIDTH, HEIGHT
     if len(paises) > 0:
         paises.sort()
         df = df.loc[:, paises]
@@ -105,51 +111,52 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
 
 def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
     global WIDTH, HEIGHT
-    source= df[paises].reset_index().melt('issue_date', var_name='Country', value_name='Cases').rename(columns={'issue_date':'Date'})
-    
-    # Create a selection that chooses the nearest point & selects based on x-value
-    nearest = alt.selection(type='single', nearest=True, on='mouseover',fields=['Date'], empty='none')
+    if len(paises) > 0:
+        source= df[paises].reset_index().melt('issue_date', var_name='Country', value_name='Cases').rename(columns={'issue_date':'Date'})
 
-    # The basic line
-    line = alt.Chart(source).mark_line(interpolate='basis').encode(
-        x='Date:T',
-        y='Cases:Q',
-        #y=alt.Y('Cases', scale=alt.Scale(type='log')),
-        color=alt.Color('Country', legend=alt.Legend(orient="bottom"))
-    )
+        # Create a selection that chooses the nearest point & selects based on x-value
+        nearest = alt.selection(type='single', nearest=True, on='mouseover',fields=['Date'], empty='none')
 
-    # Transparent selectors across the chart. This is what tells us
-    # the x-value of the cursor
-    selectors = alt.Chart(source).mark_point().encode(
-        x='Date:T',
-        opacity=alt.value(0),
-    ).add_selection(
-        nearest
-    )
+        # The basic line
+        line = alt.Chart(source).mark_line(interpolate='basis').encode(
+            x='Date:T',
+            y='Cases:Q',
+            #y=alt.Y('Cases', scale=alt.Scale(type='log')),
+            color=alt.Color('Country', legend=alt.Legend(orient="bottom"))
+        )
 
-    # Draw points on the line, and highlight based on selection
-    points = line.mark_point().encode(
-        opacity=alt.condition(nearest, alt.value(1), alt.value(0))
-    )
+        # Transparent selectors across the chart. This is what tells us
+        # the x-value of the cursor
+        selectors = alt.Chart(source).mark_point().encode(
+            x='Date:T',
+            opacity=alt.value(0),
+        ).add_selection(
+            nearest
+        )
 
-    # Draw text labels near the points, and highlight based on selection
-    text = line.mark_text(align='right', dx=5, dy=-5).encode(
-        text=alt.condition(nearest, 'Cases:Q', alt.value(' '))
-    )
+        # Draw points on the line, and highlight based on selection
+        points = line.mark_point().encode(
+            opacity=alt.condition(nearest, alt.value(1), alt.value(0))
+        )
 
-    # Draw a rule at the location of the selection
-    rules = alt.Chart(source).mark_rule(color='gray').encode(
-        x='Date:T',
-    ).transform_filter(
-        nearest
-    )
+        # Draw text labels near the points, and highlight based on selection
+        text = line.mark_text(align='right', dx=5, dy=-5).encode(
+            text=alt.condition(nearest, 'Cases:Q', alt.value(' '))
+        )
 
-    # Put the five layers into a chart and bind the data
-    graph = alt.layer(line, selectors, points, rules, text).properties(
-            width=WIDTH, height=HEIGHT
-            )
-    
-    st.write(graph)
+        # Draw a rule at the location of the selection
+        rules = alt.Chart(source).mark_rule(color='gray').encode(
+            x='Date:T',
+        ).transform_filter(
+            nearest
+        )
+
+        # Put the five layers into a chart and bind the data
+        graph = alt.layer(line, selectors, points, rules, text).properties(
+                width=WIDTH, height=HEIGHT
+                )
+
+        st.write(graph)
         
 if __name__ == "__main__":
     WIDTH = HEIGHT = 0
