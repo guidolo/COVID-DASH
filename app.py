@@ -3,6 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 import altair as alt
+import datetime
 
 
 def main():
@@ -18,17 +19,19 @@ def main():
                                              'Deaths',
                                              'Recovered'], index=0)
     log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
-    page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
     #get width and heigh
     fig = plt.figure()
     #WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
     WIDTH, HEIGHT = [640, 480]
-    #bbox = fig.get_window_extent().transformed(fig.dpi_scale_trans.inverted())
-    #WIDTH, HEIGHT = bbox.width*fig.dpi, bbox.height*fig.dpi
-    #st.sidebar.markdown(WIDTH)
-    #st.sidebar.markdown(HEIGHT)
-
-
+    if option in ['Confirmed', 'Active','Death Rate','Deaths','Recovered','Confirmed Percent Change']:
+        start = st.sidebar.date_input("Start at",datetime.date(2020, 1, 22))
+        end = st.sidebar.date_input("Finish at",datetime.date.today())
+    else:
+        start = st.sidebar.number_input('Starting at day:', 0, 100, step=1, value=0)
+        end = st.sidebar.number_input('Ending at day:', 0, 100, step=1, value=100)
+        
+    page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
+    
     if page == "Data":
         #st.header("This is your data explorer.")
         st.write("Please select a page on the left.")
@@ -40,22 +43,22 @@ def main():
         st.title("COVID-19 Time Exploration")
         paises = st.multiselect("Choose a Country", df_c.columns)
         if option == 'Confirmed':
-            visualize_data2(df_c, paises, log, 'Confirmed Cases', 'Date', '# Cases')
+            visualize_data2(df_c.loc[start:end,], paises, log, 'Confirmed Cases', 'Date', '# Cases')
         if option == 'Confirmed from 1st case':
-            visualize_data(df_c_r1, paises, log, option, 'Days', '# Cases')
+            visualize_data(df_c_r1.loc[start:end,], paises, log, option, 'Days', '# Cases')
         if option == 'Confirmed from 100 cases':
-            visualize_data(df_c_r100, paises, log, option, 'Days', '# Cases')
+            visualize_data(df_c_r100.loc[start:end,], paises, log, option, 'Days', '# Cases')
         if option == 'Confirmed Percent Change':
-            visualize_data(df_c_pc, paises, log, option, 'Date', 'Percent Change')
+            visualize_data(df_c_pc.loc[start:end,], paises, log, option, 'Date', 'Percent Change')
         if option == 'Deaths':
-            visualize_data2(df_d, paises, log, 'Death Cases', 'Date', '# Cases')
+            visualize_data2(df_d.loc[start:end,], paises, log, 'Death Cases', 'Date', '# Cases')
         if option == 'Recovered':
-            visualize_data2(df_r, paises, log, 'Recovered Cases', 'Date', '# Cases')
+            visualize_data2(df_r.loc[start:end,], paises, log, 'Recovered Cases', 'Date', '# Cases')
         if option == 'Active':
-            visualize_data2(df_act, paises, log, 'Active Cases', 'Date', '# Cases')
+            visualize_data2(df_act.loc[start:end,], paises, log, 'Active Cases', 'Date', '# Cases')
         if option == 'Death Rate':
-            visualize_data(df_rate, paises, log, option, 'Date', 'Death rate')
-
+            visualize_data(df_rate.loc[start:end,], paises, log, option, 'Date', 'Death rate')
+        
 def rescale(df, n):
     for x in range(0,n):
         df = df.reset_index(drop=True).replace(x, np.nan)
@@ -108,7 +111,7 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
             plt.yscale('log')
         plt.legend(paises)
         st.pyplot()
-
+        
 def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
     global WIDTH, HEIGHT
     if len(paises) > 0:
