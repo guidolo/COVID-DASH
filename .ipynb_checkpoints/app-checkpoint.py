@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import streamlit as st
 import altair as alt
 import datetime
+from datetime import date, timedelta
 
 
 def main():
@@ -17,18 +18,23 @@ def main():
                                              'Active',
                                              'Death Rate',
                                              'Deaths',
-                                             'Recovered'], index=0)
+                                             'Recovered',
+                                             'Confirmed Forecasting'], index=0)
     log = st.sidebar.radio('Scale', ['Normal','Log'], index=0)
     #get width and heigh
     fig = plt.figure()
     #WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
     WIDTH, HEIGHT = [640, 480]
-    if option in ['Confirmed', 'Active','Death Rate','Deaths','Recovered','Confirmed Percent Change']:
+    if option in ['Confirmed', 'Active','Death Rate','Deaths','Recovered','Confirmed Percent Change','Confirmed Forecasting']:
         start = st.sidebar.date_input("Start at",datetime.date(2020, 1, 22))
         end = st.sidebar.date_input("Finish at",datetime.date.today())
     else:
         start = st.sidebar.number_input('Starting at day:', 0, 100, step=1, value=0)
         end = st.sidebar.number_input('Ending at day:', 0, 100, step=1, value=100)
+    if option in ['Confirmed Forecasting']:
+        last = st.sidebar.number_input('Days to use in training:', 0, 100, step=1, value=30)
+        leave_out = st.sidebar.number_input('Days to use in testing:', 0, 10, step=1, value=2)
+        forecast = st.sidebar.number_input('Days to forecast:', 0, 10, step=1, value=5)
         
     page = st.sidebar.selectbox("Choose a page", ["Graph", "Data"])
     
@@ -58,6 +64,8 @@ def main():
             visualize_data2(df_act.loc[start:end,], paises, log, 'Active Cases', 'Date', '# Cases')
         if option == 'Death Rate':
             visualize_data(df_rate.loc[start:end,], paises, log, option, 'Date', 'Death rate')
+        if option == 'Confirmed Forecasting':
+            make_exponential_fiting(df_c.loc[start:end,], paises, last, leave_out, forecast)
         
 def rescale(df, n):
     for x in range(0,n):
@@ -96,6 +104,50 @@ def load_data():
     df_c_r1 = rescale(df_c, 1)
     df_c_pc = df_c.pct_change()
     return df_c, df_c_r1, df_c_r100, df_c_pc, df_d, df_r, df_act, df_rate
+
+
+def make_exponential_fiting(df, paises, last, leave_out, forecast):
+    if len(paises) > 0:
+        pais = paises[0]
+        def daterange(start_date, N=5):
+            start_date = date.fromisoformat(start_date)
+            for n in range(0, N):
+                start_part = start_date + timedelta(days=n)
+                yield start_part
+
+        index_real = df.loc[:,pais].index
+        y_real = df.loc[:,pais]
+
+        temp = df.loc[:,pais].replace(0, np.nan).dropna()
+        indice_train = temp.iloc[-last:-leave_out].index
+        temp = temp.reset_index(drop=True).iloc[-last:-leave_out]
+        temp = temp.reset_index(drop=True).reset_index().rename(columns={'index':'days'})
+        temp.loc[:,'days'] = temp.days
+        x_data_train = temp.days.values
+        y_data_train = temp[pais].values
+
+        fit = np.polyfit(x_data_train, np.log(y_data_train), 1)
+        st.write('Model function:   y =  {} * {}^x'.format(np.round(np.exp(fit[1]),2), np.round(np.exp(fit[0]),2)))
+
+        #real data
+        plt.plot(index_real, y_real, "o")
+
+        #fitting
+        y_fit = np.exp(fit[1]) * np.exp(fit[0]*x_data_train)
+        plt.plot(indice_train, y_fit)
+        
+        #forecasting
+        last_day = x_data_train.max()
+        last_date = indice_train.max().strftime("%Y-%m-%d")
+        x_forecasting = np.arange(last_day,last_day+forecast)
+        y_forecasting = np.exp(fit[1]) * np.exp(fit[0]*x_forecasting)
+        indice_forecasting = [x for x in  daterange(last_date, forecast)]
+        plt.plot(indice_forecasting, y_forecasting, '-', color='red')
+        plt.title('COVID19 -- Exponential forecasting for {}'.format(pais))
+        plt.legend(['{} real data'.format(pais), 'training curve', 'forecast curve'])
+        plt.xticks(rotation=20)
+        st.pyplot()
+
 
 def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
     global WIDTH, HEIGHT
