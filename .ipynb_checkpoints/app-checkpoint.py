@@ -3,8 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import streamlit as st
 import altair as alt
-import datetime
-from datetime import date, timedelta
+from datetime import datetime, date, timedelta
 
 
 def main():
@@ -26,8 +25,8 @@ def main():
     #WIDTH, HEIGHT = fig.get_size_inches()*fig.dpi
     WIDTH, HEIGHT = [640, 480]
     if option in ['Confirmed', 'Active','Death Rate','Deaths','Recovered','Confirmed Percent Change','Confirmed Forecasting']:
-        start = st.sidebar.date_input("Start at",datetime.date(2020, 1, 22))
-        end = st.sidebar.date_input("Finish at",datetime.date.today())
+        start = st.sidebar.date_input("Start at",date(2020, 1, 22))
+        end = st.sidebar.date_input("Finish at",date.today())
     else:
         start = st.sidebar.number_input('Starting at day:', 0, 100, step=1, value=0)
         end = st.sidebar.number_input('Ending at day:', 0, 100, step=1, value=100)
@@ -110,7 +109,7 @@ def make_exponential_fiting(df, paises, last, leave_out, forecast):
     if len(paises) > 0:
         pais = paises[0]
         def daterange(start_date, N=5):
-            start_date = datetime.datetime.fromisoformat(start_date)
+            start_date = datetime.fromisoformat(start_date)
             for n in range(0, N):
                 start_part = start_date + timedelta(days=n)
                 yield start_part
