@@ -142,10 +142,11 @@ def make_exponential_fiting(df, paises, last, leave_out, forecast):
         x_forecasting = np.arange(last_day,last_day+forecast)
         y_forecasting = np.exp(fit[1]) * np.exp(fit[0]*x_forecasting)
         indice_forecasting = [x for x in  daterange(last_date, forecast)]
-        plt.plot(indice_forecasting, y_forecasting, '-', color='red')
+        plt.plot(indice_forecasting, y_forecasting, '.-', color='red')
         plt.title('COVID19 -- Exponential forecasting for {}'.format(pais))
         plt.legend(['{} real data'.format(pais), 'training curve', 'forecast curve'])
         plt.xticks(rotation=20)
+        plt.grid()
         st.pyplot()
 
 
@@ -162,6 +163,7 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
         if log == 'Log':
             plt.yscale('log')
         plt.legend(paises)
+        plt.grid()
         st.pyplot()
         
 def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
