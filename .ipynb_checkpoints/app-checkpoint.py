@@ -109,7 +109,8 @@ def make_exponential_fiting(df, paises, last, leave_out, forecast):
     if len(paises) > 0:
         pais = paises[0]
         def daterange(start_date, N=5):
-            start_date = datetime.fromisoformat(start_date)
+            #start_date = datetime.fromisoformat(start_date)
+            start_date = date(int(start_date[:4]), int(start_date[6:7]), int(start_date[8:10]))
             for n in range(0, N):
                 start_part = start_date + timedelta(days=n)
                 yield start_part
