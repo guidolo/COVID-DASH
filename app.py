@@ -52,6 +52,8 @@ def main():
         if option == 'Confirmed from 1st case':
             visualize_data(df_c_r1.loc[start:end,], paises, log, option, 'Days', '# Cases')
         if option == 'Confirmed from 100 cases':
+            if 'China' in paises:
+                st.write('WARNING!! As China starts at ~500 cases, we moved China 8 days ahead in order to match the rest of the curves')
             visualize_data(df_c_r100.loc[start:end,], paises, log, option, 'Days', '# Cases')
         if option == 'Confirmed Percent Change':
             visualize_data(df_c_pc.loc[start:end,], paises, log, option, 'Date', 'Percent Change')
@@ -119,8 +121,13 @@ def make_exponential_fiting(df, paises, last, leave_out, forecast):
         y_real = df.loc[:,pais]
 
         temp = df.loc[:,pais].replace(0, np.nan).dropna()
-        indice_train = temp.iloc[-last:-leave_out].index
-        temp = temp.reset_index(drop=True).iloc[-last:-leave_out]
+
+        if leave_out == 0:
+            indice_train = temp.iloc[-last:].index
+            temp = temp.reset_index(drop=True).iloc[-last:]
+        else:
+            indice_train = temp.iloc[-last:-leave_out].index
+            temp = temp.reset_index(drop=True).iloc[-last:-leave_out]
         temp = temp.reset_index(drop=True).reset_index().rename(columns={'index':'days'})
         temp.loc[:,'days'] = temp.days
         x_data_train = temp.days.values
@@ -165,7 +172,7 @@ def visualize_data(df, paises, log, title, xlabel='', ylabel=''):
         plt.legend(paises)
         plt.grid()
         st.pyplot()
-        
+
 def visualize_data2(df, paises, log, option, xlabel='', ylabel=''): 
     global WIDTH, HEIGHT
     if len(paises) > 0:
