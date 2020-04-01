@@ -16,6 +16,7 @@ def main():
                                              'Confirmed Percent Change',
                                              'Active',
                                              'Death Rate',
+                                             'Death Rate vs Active',
                                              'Deaths',
                                              'Recovered',
                                              'Confirmed Forecasting'], index=0)
@@ -27,7 +28,7 @@ def main():
     if option in ['Confirmed', 'Active','Death Rate','Deaths','Recovered','Confirmed Percent Change','Confirmed Forecasting']:
         start = st.sidebar.date_input("Start at",date(2020, 1, 22))
         end = st.sidebar.date_input("Finish at",date.today())
-    else:
+    if option in ['Confirmed from 1st case', 'Confirmed from 100 cases']:
         start = st.sidebar.number_input('Starting at day:', 0, 100, step=1, value=0)
         end = st.sidebar.number_input('Ending at day:', 0, 100, step=1, value=100)
     if option in ['Confirmed Forecasting']:
@@ -65,6 +66,8 @@ def main():
             visualize_data2(df_act.loc[start:end,], paises, log, 'Active Cases', 'Date', '# Cases')
         if option == 'Death Rate':
             visualize_data(df_rate.loc[start:end,], paises, log, option, 'Date', 'Death rate')
+        if option == 'Death Rate vs Active':            
+            visualize_deathrate_active(df_rate, df_act, paises)
         if option == 'Confirmed Forecasting':
             make_exponential_fiting(df_c.loc[start:end,], paises, last, leave_out, forecast)
         
@@ -222,6 +225,24 @@ def visualize_data2(df, paises, log, option, xlabel='', ylabel=''):
 
         st.write(graph)
         
+def visualize_deathrate_active(df_rate, df_act, paises):
+    if len(paises) > 0:
+        temp = pd.merge(pd.DataFrame(df_rate.unstack()).rename(columns={0:'death_rate'}),
+                        pd.DataFrame(df_act.unstack()).rename(columns={0:'active'}),
+                        left_index=True, right_index=True, how='inner')
+        temp = temp.reset_index().drop('issue_date', axis=1)
+        paises.sort()
+        for pais in paises:
+            data_part = temp.loc[temp.Country== pais]#.sort_values('active')
+            plt.plot(data_part.active, data_part.death_rate)
+        plt.legend(paises)
+        plt.title('COVID19 -- Death Rate vs Active Cases')
+        plt.ylabel('Death Rate')
+        plt.xlabel('Active Cases')
+        plt.grid()
+        st.pyplot()
+
+    
 if __name__ == "__main__":
     WIDTH = HEIGHT = 0
     main()
