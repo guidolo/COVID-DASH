@@ -28,7 +28,7 @@ data = [97, 271, 860, 1995, 4419, 6549, 6321, 4763, 2571, 1385, 615, 302, 159, 7
 #### Set initial parameter values and initial states ####
 params = [0.4, 0.25, 80000.0]#make sure all the params and inition states are float
 paramnames = ['beta', 'gamma', 'k']
-ini = sir_ode.x0fcn(params,data)
+ini = sir_ode.x0fcn(params, data)
 print(ini)
 
 #### Simulate and plot the model ####
